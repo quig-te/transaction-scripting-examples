@@ -1,14 +1,9 @@
 import { By, Key, until } from 'selenium-webdriver';
 import { driver, credentials, markers } from 'thousandeyes';
 
-// Template Parameters
-let email = '<<email>>'; // tonystark@acmehero.onmicrosoft.com';
-let targetUser = '<<targetUser>>'; // 'Pepper Potts';
-let credentialsName = '<<credentialsName>>'; // 'tonystark';
+runScript();
 
 let markerTimes = {};
-
-runScript();
 
 async function runScript() {
   await configureDriver();
@@ -22,14 +17,14 @@ async function runScript() {
 
   markerStart("Login");
   await click(By.css(`[name="loginfmt"]`));
-  await typeText(email, By.css(`[name="loginfmt"]`));
+  await typeText('tonystark@acmehero.onmicrosoft.com', By.css(`[name="loginfmt"]`));
 
   // Click on 'Next'
   await click(By.css(`[value="Next"]`));
 
   // Click on 'Enter the password for tony@acmeher...'
   await click(By.css(`[name="passwd"]`));
-  await typeText(credentials.get(credentialsName), By.css(`[name="passwd"]`));
+  await typeText(credentials.get('tonystark'), By.css(`[name="passwd"]`));
 
   // Click on 'Sign in'
   await click(By.id(`idSIButton9`));
@@ -39,10 +34,11 @@ async function runScript() {
   await markerClick(By.id('idBtn_Back'), "Login", "Backend Load");
 
   // Dismiss the "use desktop version" message
-  await clickPeriodic(By.css(`[data-tid="early-desktop-promo-use-web"]`), 500);
+  //await clickPeriodic(By.css(`[data-tid="early-desktop-promo-use-web"]`), 500);
+  //await clickWithText("Use the web app instead");
 
   // Wait for chat page to load
-  await driver.wait(until.elementIsVisible(await driver.findElement(By.css(`.team-information`))))
+  await driver.wait(until.elementIsVisible((await driver.findElement(By.css(`.team-information`)))));
 
   // Dismiss popups
   await clickPeriodic(By.css(`[data-tid="closeModelDialogBtn"]`), 200);
@@ -54,13 +50,32 @@ async function runScript() {
   markerStart("Compose Message");
 
   // Start a new chat
-  await click(By.css(`[aria-label="Chat Toolbar"]`));
+  await click(By.css(`[aria-label="Chat Toolbar more options"]`));
 
   //Click "New Chat (Alt+N)"
   await click(By.css(`[aria-label="New Chat (Alt+N)"]`));
 
   //Compose Text to Pepper
-  await typeText('Pepper Potts' + Key.RETURN, By.css(`[data-tid="peoplePicker"]`)); 
+  //await typeText('Pepper Potts' + Key.ENTER, By.css(`[data-tid="peoplePicker"]`));
+   
+   await typeText('Pepper Potts', By.css(`[data-tid="peoplePicker"]`));
+   // Make driver sleep for 1 seconds
+   await driver.sleep(1000);
+   
+   await driver.findElement(By.css(`[data-tid="peoplePicker"]`)).sendKeys(Key.RETURN);
+   
+ 
+ 
+ // Make driver sleep for 5 seconds
+  await driver.sleep(2000);
+  
+   
+//const element = driver.findElement(By.css(`[data-tid="peoplePicker"]`));
+//await moveMouseInto(element);
+
+//await click(By.css(`[data-tid="peoplePicker"]`));
+
+ //await driver.sleep(2000);
 
   markerStop("Compose Message");
   markerStart("Send Message");
@@ -69,7 +84,8 @@ async function runScript() {
   let message = "Hello " + Date.now();
   await console.log("Sending " + message);
 
-  await driver.findElement(By.css('[aria-label="Type a new message, editing"]')).sendKeys(message, Key.ENTER);
+  //await driver.findElement(By.css('[data-tid="ckeditor-newP2PMessage"]')).sendKeys(message, Key.ENTER);
+    await driver.findElement(By.css('[aria-label="Type a new message, editing"]')).sendKeys(message, Key.ENTER);
 
   await driver.sleep(500);
 
@@ -78,6 +94,8 @@ async function runScript() {
 
   markerStop("Send Message");
   await console.log("Found " + message);
+
+  await driver.takeScreenshot();
 }
 
 async function configureDriver() {
@@ -86,7 +104,7 @@ async function configureDriver() {
     height: 983 });
 
   await driver.manage().setTimeouts({
-    implicit: 10 * 1000 // If an element is not found, reattempt for this many milliseconds
+    implicit: 10 * 10000 // If an element is not found, reattempt for this many milliseconds
   });
 }
 
@@ -99,6 +117,13 @@ async function click(selector) {
     await driver.findElement(selector).
     click();
   }
+}
+
+async function moveMouseInto(element) {
+    await driver.actions({ bridge: true })
+                .move({ x: -1, y: 0, origin: element })
+                .move({ x: 1, y: 0, origin: element })
+                .perform();
 }
 
 async function markerClick(selector, stop, start) {
@@ -145,13 +170,13 @@ async function typeText(value, selector) {
 
 async function clickPeriodic(selector, wait) {
   const imp = (await driver.manage().getTimeouts()).implicit;
-  await driver.manage().setTimeouts({implicit: wait});
+  await driver.manage().setTimeouts({ implicit: wait });
   const len = (await driver.findElements(selector)).length;
-  if (len > 0) { 
-      await console.log("Clicking " + selector);
-      await click (selector);
+  if (len > 0) {
+    await console.log("Clicking " + selector);
+    await click(selector);
   }
-  await driver.manage().setTimeouts({implicit: imp});
+  await driver.manage().setTimeouts({ implicit: imp });
 }
 
 async function findElementWithText(text) {
@@ -162,12 +187,12 @@ async function clickWithText(text) {
   return await click(By.xpath(`//*[text()="${text}"]`));
 }
 
-async function markerStart (marker) {
-    markerTimes[marker] =  Date.now();
-    markers.start (marker);
+async function markerStart(marker) {
+  markerTimes[marker] = Date.now();
+  markers.start(marker);
 }
 
-async function markerStop (marker) {
-    markers.stop (marker);
-    console.log(marker + ": " + (Date.now() - markerTimes[marker]) + "ms");
+async function markerStop(marker) {
+  markers.stop(marker);
+  console.log(marker + ": " + (Date.now() - markerTimes[marker]) + "ms");
 }
